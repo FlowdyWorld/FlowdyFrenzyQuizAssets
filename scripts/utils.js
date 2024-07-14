@@ -21,6 +21,7 @@ function getScriptsFolder(language) {
 async function convertToWebp(path) {
     let ext = path.split('.').pop();
     await webp.cwebp(path, path.replace(`.${ext}`, '.webp'), "-q 80");
+    fs.unlinkSync(path);
 }
 
 function recursiveReadDirSync(dir, func) {

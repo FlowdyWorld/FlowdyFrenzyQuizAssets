@@ -3,11 +3,11 @@ const path = require('path');
 const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
 
-class SimplePictureQuestionGenerator {
+class SimpleSoundQuestionGenerator {
 
     constructor(language='fr', name='unknow', question='unknow ?', theme='unknow', subtheme='') {
         this.language = language;
-        this.type = 'picture';
+        this.type = 'sound';
         this.theme = theme;
         this.subtheme = subtheme;
         this.name = name;
@@ -60,16 +60,13 @@ class SimplePictureQuestionGenerator {
     async prepareAssets() {
         for await(let file of fs.readdirSync(this.inputFolder)) {
             if(fs.lstatSync(path.join(this.inputFolder, file)).isDirectory() ) continue;
-            let filePath = path.join(this.inputFolder, file);
             let asset = {
                 name: file.split('.')[0],
                 file: file
             }
             this.assets.push(asset);
-            if(file.split('.')[1] === "webp") continue;
-            await convertToWebp(filePath);
         }
-
+            
         this.checkAssetsData();
     }
 
@@ -85,7 +82,7 @@ class SimplePictureQuestionGenerator {
 
     generateQuestions() {
         this.assets.forEach(asset => {
-            if(asset.file.endsWith('.webp')) {
+            if(asset.file.endsWith('.mp3') || asset.file.endsWith('.wav') || asset.file.endsWith('.ogg')) {
                 let uuid = uuidv4();
                 let question = this.generateQuestion(asset, uuid);
                 this.questions.push(question);
@@ -130,13 +127,13 @@ class SimplePictureQuestionGenerator {
             }
         ]
 
-        let proposalFilter = this.assets.filter(c => c !== fileName);
+        let proposalFilter = this.assets.filter(a => a.name !== fileName);
         for (let i = 0; i < 5; i++) {
-            proposalFilter = this.assets.filter(c => !selectedAsset.includes(c));
+            proposalFilter = this.assets.filter(a => !selectedAsset.includes(a.name));
             let randomAsset = proposalFilter[Math.floor(Math.random() * proposalFilter.length)];
             proposals.push(
                 {
-                    name: randomAsset,
+                    name: randomAsset.name,
                     is_answer: false
                 }
             );
@@ -148,7 +145,8 @@ class SimplePictureQuestionGenerator {
             type: this.type,
             sentence: this.question_sentence,
             data: {
-                picture_url: path.join(this.repoOutputFolder, `${uuid}.${fileExtension}`),
+                sound_url: path.join(this.repoOutputFolder, `${uuid}.${fileExtension}`),
+                ...this.generateQuestionData(asset)
             },
             proposal: [
                 ...proposals
@@ -167,4 +165,4 @@ class SimplePictureQuestionGenerator {
     }
 }
 
-module.exports = SimplePictureQuestionGenerator;
+module.exports = SimpleSoundQuestionGenerator;

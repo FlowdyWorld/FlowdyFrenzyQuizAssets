@@ -125,8 +125,14 @@ class SimpleGenerator {
      * @param {*} asset 
      * @returns data object
      */
-    generateQuestionData(asset) {
+    generateQuestionData(uuid, asset) {
         let data = {};
+        let fileExtension = asset.file.split('.')[1];
+        if(this.type == 'sound')
+            data.sound_url = path.join(this.repoOutputFolder, `${uuid}.${fileExtension}`);
+        else if(this.type == 'picture')
+            data.picture_url = path.join(this.repoOutputFolder, `${uuid}.${fileExtension}`);
+
         let reveal_uuid = uuidv4();
         if(asset.reveal_picture) {
             if(!fs.existsSync(path.join(this.outputFolder, 'reveal_picture')))
@@ -152,7 +158,47 @@ class SimpleGenerator {
      * @param {*} asset 
      * @param {*} uuid 
      */
-    generateQuestion(asset, uuid) {}
+    generateQuestion(asset, uuid) {
+
+        let fileName = asset.file.split('.')[0];
+        let fileExtension = asset.file.split('.')[1];
+        console.log(`Processing: ${fileName}`);
+
+        fs.copyFileSync(path.join(this.inputFolder, asset.file), path.join(this.outputFolder, `${uuid}.${fileExtension}`));
+
+        let selectedAsset = [fileName];
+        let proposals = [
+            {
+                name: fileName,
+                is_answer: true
+            }
+        ]
+
+        let proposalFilter = this.assets.filter(a => a.name !== fileName);
+        for (let i = 0; i < 5; i++) {
+            proposalFilter = this.assets.filter(a => !selectedAsset.includes(a.name));
+            let randomAsset = proposalFilter[Math.floor(Math.random() * proposalFilter.length)];
+            proposals.push(
+                {
+                    name: randomAsset.name,
+                    is_answer: false
+                }
+            );
+            selectedAsset.push(randomAsset);
+        }
+
+        return {
+            id: uuid,
+            type: this.type,
+            sentence: this.question_sentence,
+            data: {
+                ...this.generateQuestionData(uuid, asset)
+            },
+            proposal: [
+                ...proposals
+            ],
+        };
+    }
 
     /**
      * Write questions to json file

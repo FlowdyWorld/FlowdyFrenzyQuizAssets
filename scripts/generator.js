@@ -32,14 +32,15 @@ class SimpleGenerator {
             if(fs.lstatSync(path.join(this.inputFolder, file)).isDirectory() ) continue;
             let asset = {
                 name: file.split('.')[0],
-                file: file
+                file: file,
             }
             this.assets.push(asset);
+
 
             let filePath = path.join(this.inputFolder, file);
             switch(this.type) {
                 case 'picture':
-                    if(file.split('.')[1] === "webp") continue;
+                    if(path.extname(file) === ".webp") continue;
                     await convertToWebp(filePath);
                     break;
                 default:
@@ -67,7 +68,7 @@ class SimpleGenerator {
     checkAssetsData() {
         if(fs.existsSync(path.join(this.inputFolder, 'reveal_picture'))) {
             fs.readdirSync(path.join(this.inputFolder, 'reveal_picture')).forEach(file => {
-                if(file.endsWith('.png') || file.endsWith('.jpg') || file.endsWith('.jpeg') || file.endsWith('.webp')) {
+                if (['.png', '.jpg', '.jpeg', '.webp'].includes(path.extname(file))) {
                     let asset = this.assets.find(c => c.name === file.split('.')[0]);
                     if(asset) {
                         asset.reveal_picture = path.join(this.inputFolder, 'reveal_picture', file);
@@ -81,7 +82,7 @@ class SimpleGenerator {
 
         if(fs.existsSync(path.join(this.inputFolder, 'reveal_sound'))) {
             fs.readdirSync(path.join(this.inputFolder, 'reveal_sound')).forEach(file => {
-                if(file.endsWith('.mp3') || file.endsWith('.wav') || file.endsWith('.ogg')) {
+                if (['.mp3', '.wav', '.ogg'].includes(path.extname(file))) {
                     let asset = this.assets.find(c => c.name === file.split('.')[0]);
                     if(asset) {
                         asset.reveal_sound = path.join(this.inputFolder, 'reveal_sound', file);
@@ -109,10 +110,8 @@ class SimpleGenerator {
      */
     generateQuestions() {
         this.assets.forEach(asset => {
-            if(this.type == 'sound' && !(asset.file.endsWith('.mp3') || asset.file.endsWith('.wav') || asset.file.endsWith('.ogg'))) 
-                return;
-            else if(this.type == 'picture' && !(asset.file.endsWith('.webp')))
-                return;
+            if (this.type === 'sound' && !['.mp3', '.wav', '.ogg'].includes(path.extname(asset.file))) return;
+            if (this.type === 'picture' && path.extname(asset.file) !== '.webp') return;
             
             let uuid = uuidv4();
             let question = this.generateQuestion(asset, uuid);
@@ -125,28 +124,28 @@ class SimpleGenerator {
      * @param {*} asset 
      * @returns data object
      */
-    generateQuestionData(uuid, asset) {
+    generateQuestionData(uuid, asset, otherPaths = []) {
         let data = {};
         let fileExtension = asset.file.split('.')[1];
         if(this.type == 'sound')
-            data.sound_url = path.join(this.repoOutputFolder, `${uuid}.${fileExtension}`);
+            data.sound_url = path.join(this.repoOutputFolder,...otherPaths,  `${uuid}.${fileExtension}`);
         else if(this.type == 'picture')
-            data.picture_url = path.join(this.repoOutputFolder, `${uuid}.${fileExtension}`);
+            data.picture_url = path.join(this.repoOutputFolder, ...otherPaths, `${uuid}.${fileExtension}`);
 
         let reveal_uuid = uuidv4();
         if(asset.reveal_picture) {
-            if(!fs.existsSync(path.join(this.outputFolder, 'reveal_picture')))
-                fs.mkdirSync(path.join(this.outputFolder, 'reveal_picture'), { recursive: true });
-            fs.copyFileSync(asset.reveal_picture, path.join(this.outputFolder, `reveal_picture/${reveal_uuid}.webp`));
-            data.reveal_picture_url = path.join(this.repoOutputFolder, `reveal_picture/${reveal_uuid}.webp`);
+            if(!fs.existsSync(path.join(this.outputFolder, ...otherPaths, 'reveal_picture')))
+                fs.mkdirSync(path.join(this.outputFolder, ...otherPaths, 'reveal_picture'), { recursive: true });
+            fs.copyFileSync(asset.reveal_picture, path.join(this.outputFolder, ...otherPaths, `reveal_picture/${reveal_uuid}.webp`));
+            data.reveal_picture_url = path.join(this.repoOutputFolder, ...otherPaths, `reveal_picture/${reveal_uuid}.webp`);
         }
         if(asset.reveal_sound) {
-            if(!fs.existsSync(path.join(this.outputFolder, 'reveal_sound')))
-                fs.mkdirSync(path.join(this.outputFolder, 'reveal_sound'), { recursive: true });
+            if(!fs.existsSync(path.join(this.outputFolder, ...otherPaths, 'reveal_sound')))
+                fs.mkdirSync(path.join(this.outputFolder, ...otherPaths, 'reveal_sound'), { recursive: true });
             
             let fileExtension = asset.reveal_sound.split('.')[1];
-            fs.copyFileSync(asset.reveal_sound, path.join(this.outputFolder, `reveal_sound/${reveal_uuid}.${fileExtension}`));
-            data.reveal_sound_url = path.join(this.repoOutputFolder, `reveal_sound/${reveal_uuid}.${fileExtension}`);
+            fs.copyFileSync(asset.reveal_sound, path.join(this.outputFolder, ...otherPaths, `reveal_sound/${reveal_uuid}.${fileExtension}`));
+            data.reveal_sound_url = path.join(this.repoOutputFolder, ...otherPaths, `reveal_sound/${reveal_uuid}.${fileExtension}`);
         }
 
         return data;
@@ -160,9 +159,9 @@ class SimpleGenerator {
      */
     generateQuestion(asset, uuid) {
 
-        let fileName = asset.file.split('.')[0];
-        let fileExtension = asset.file.split('.')[1];
-        console.log(`Processing: ${fileName}`);
+        let fileName = asset.file.replace(path.extname(asset.file), '');
+        let fileExtension = path.extname(asset.file).replace('.', '');
+        console.log(`Processing ${this.theme}/${this.subtheme}: ${fileName}`);
 
         fs.copyFileSync(path.join(this.inputFolder, asset.file), path.join(this.outputFolder, `${uuid}.${fileExtension}`));
 
@@ -191,9 +190,7 @@ class SimpleGenerator {
             id: uuid,
             type: this.type,
             sentence: this.question_sentence,
-            data: {
-                ...this.generateQuestionData(uuid, asset)
-            },
+            data: this.generateQuestionData(uuid, asset),
             proposal: [
                 ...proposals
             ],
@@ -203,9 +200,13 @@ class SimpleGenerator {
     /**
      * Write questions to json file
      */
-    writeQuestions() {
+    writeQuestions(withSubtheme = false) {
+        if(withSubtheme && !this.subtheme) return;
+        if(withSubtheme && !fs.existsSync(path.join(this.questionOutputFolder, this.subtheme))) {
+            fs.mkdirSync(path.join(this.questionOutputFolder, this.subtheme), { recursive: true });
+        }
         fs.writeFileSync(
-            path.join(this.questionOutputFolder, `${this.name}.json`), 
+            path.join(this.questionOutputFolder, withSubtheme ? this.subtheme : '', `${this.name}.json`), 
             JSON.stringify({
                 default_sentence: this.question_sentence,
                 questions: this.questions

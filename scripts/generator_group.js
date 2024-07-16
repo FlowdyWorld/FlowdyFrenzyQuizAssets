@@ -101,7 +101,7 @@ class GroupGenerator extends SimpleGenerator {
                 newCodesPath.pop();
                 let assets = codes[code].assets;
                 let questions = [];
-                this.generateQuestionForAssets(assets, questions, newCodesPath);
+                this.generateQuestionForAssets(assets, questions, newCodesPath, code);
                 
                 if(newCodesPath.length === 0) {
                     if(Array.isArray(this.questions))
@@ -135,13 +135,13 @@ class GroupGenerator extends SimpleGenerator {
         this.recursiveGenerateQuestions(this.assets);
     }
     
-    generateQuestionForAssets(assets, questions, codesPath) {
+    generateQuestionForAssets(assets, questions, codesPath, code) {
         assets.forEach(asset => {
             if (this.type === 'sound' && !['.mp3', '.wav', '.ogg'].includes(path.extname(asset.file))) return;
             if (this.type === 'picture' && path.extname(asset.file) !== '.webp') return;
             
             let uuid = uuidv4();
-            questions.push(this.generateQuestion(asset, uuid, assets, codesPath));
+            questions.push(this.generateQuestion(asset, uuid, assets, codesPath, code));
         });
     }
     
@@ -150,7 +150,7 @@ class GroupGenerator extends SimpleGenerator {
     * @param {*} asset 
     * @param {*} uuid 
     */
-    generateQuestion(asset, uuid, assets, codesPath) {
+    generateQuestion(asset, uuid, assets, codesPath, code) {
         
         let fileName = asset.file.replace(path.extname(asset.file), '');
         let fileExtension = path.extname(asset.file).replace('.', '');
@@ -180,11 +180,11 @@ class GroupGenerator extends SimpleGenerator {
             );
             selectedAsset.push(randomAsset);
         }
-        
+
         return {
             id: uuid,
             type: this.type,
-            sentence: this.question_sentence,
+            sentence: this.assetDescriptions[code].question,
             data: this.generateQuestionData(uuid, asset, codesPath),
             proposal: [
                 ...proposals

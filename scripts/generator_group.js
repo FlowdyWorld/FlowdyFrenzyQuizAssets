@@ -15,6 +15,7 @@ class GroupGenerator extends SimpleGenerator {
     }
     
     getAssetDescriptionForCode(code) {
+        if(this.assetDescriptions === undefined) return undefined;
         return this.assetDescriptions[code];
     }
     
@@ -68,30 +69,30 @@ class GroupGenerator extends SimpleGenerator {
     * Check if assets have reveal picture or sound etc..
     */
     checkAssetsData() {
-        /*if(fs.existsSync(path.join(this.inputFolder, 'reveal_picture'))) {
-        fs.readdirSync(path.join(this.inputFolder, 'reveal_picture')).forEach(file => {
-            if (['.png', '.jpg', '.jpeg', '.webp'].includes(path.extname(file))) {
-        let asset = this.assets.find(c => c.name === file.split('.')[0]);
-        if(asset) {
-        asset.reveal_picture = path.join(this.inputFolder, 'reveal_picture', file);
-        }
-        if(!file.endsWith('.webp')) {
-        convertToWebp(path.join(this.inputFolder, 'reveal_picture', file));
-        }
-        }
-        }); 
+        if(fs.existsSync(path.join(this.inputFolder, 'reveal_picture'))) {
+            fs.readdirSync(path.join(this.inputFolder, 'reveal_picture')).forEach(file => {
+                if (['.png', '.jpg', '.jpeg', '.webp'].includes(path.extname(file))) {
+                    let asset = this.assets.find(c => c.name === file.split('.')[0]);
+                    if(asset) {
+                        asset.reveal_picture = path.join(this.inputFolder, 'reveal_picture', file);
+                    }
+                    if(!file.endsWith('.webp')) {
+                        convertToWebp(path.join(this.inputFolder, 'reveal_picture', file));
+                    }
+                }
+            }); 
         }
         
         if(fs.existsSync(path.join(this.inputFolder, 'reveal_sound'))) {
-        fs.readdirSync(path.join(this.inputFolder, 'reveal_sound')).forEach(file => {
-            if (['.mp3', '.wav', '.ogg'].includes(path.extname(file))) {
-        let asset = this.assets.find(c => c.name === file.split('.')[0]);
-        if(asset) {
-        asset.reveal_sound = path.join(this.inputFolder, 'reveal_sound', file);
+            fs.readdirSync(path.join(this.inputFolder, 'reveal_sound')).forEach(file => {
+                if (['.mp3', '.wav', '.ogg'].includes(path.extname(file))) {
+                    let asset = this.assets.find(c => c.name === file.split('.')[0]);
+                    if(asset) {
+                        asset.reveal_sound = path.join(this.inputFolder, 'reveal_sound', file);
+                    }
+                }
+            });
         }
-        }
-        });
-        }*/
     }
     
     recursiveGenerateQuestions(codes, codesPath = []) {
@@ -107,7 +108,7 @@ class GroupGenerator extends SimpleGenerator {
                     if(Array.isArray(this.questions))
                         this.questions.push(...questions);
                     else
-                        this.questions = questions;
+                    this.questions = questions;
                 }
                 else {
                     newCodesPath.reduce((acc, cur, idx) => {
@@ -166,7 +167,7 @@ class GroupGenerator extends SimpleGenerator {
                 name: fileName,
                 is_answer: true
             }
-        ]
+        ];
         
         let proposalFilter = assets.filter(a => a.name !== fileName);
         for (let i = 0; i < 5; i++) {
@@ -180,11 +181,11 @@ class GroupGenerator extends SimpleGenerator {
             );
             selectedAsset.push(randomAsset);
         }
-
+        
         return {
             id: uuid,
             type: this.type,
-            sentence: this.assetDescriptions[code].question,
+            sentence: this.getAssetDescriptionForCode(code)?.question ?? this.question_sentence,
             data: this.generateQuestionData(uuid, asset, codesPath),
             proposal: [
                 ...proposals
@@ -211,7 +212,7 @@ class GroupGenerator extends SimpleGenerator {
             }
         }
     }
-
+    
     /**
     * Write questions to json file
     */
@@ -220,7 +221,7 @@ class GroupGenerator extends SimpleGenerator {
             super.writeQuestions(true);
         }
         else
-            this.recursiveWriteQuestions(this.questions);
+        this.recursiveWriteQuestions(this.questions);
     }
 }
 

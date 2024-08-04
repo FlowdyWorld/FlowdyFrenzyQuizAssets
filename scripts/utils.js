@@ -48,11 +48,28 @@ function convert_all_assets_to_webp() {
     });
 }
 
+class HttpUrl {
+
+    static join(...args) {
+        args.forEach((arg, i) => {
+            if (arg.startsWith('/')) {
+                args[i] = arg.substring(1);
+            }
+            if (arg.endsWith('/')) {
+                args[i] = arg.substring(0, arg.length - 1);
+            }
+        });
+        return args.join('/');
+    }
+    
+}
+
 module.exports = {
     getRepoUrl,
     convert_all_assets_to_webp,
     convertToWebp,
     getMainFolder,
     getQuestionsFolder,
-    getScriptsFolder
+    getScriptsFolder,
+    HttpUrl
 };

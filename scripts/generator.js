@@ -1,4 +1,4 @@
-const { getRepoUrl, getMainFolder, getQuestionsFolder, getScriptsFolder, convertToWebp } = require('./utils');
+const { getRepoUrl, getMainFolder, getQuestionsFolder, getScriptsFolder, convertToWebp, HttpUrl} = require('./utils');
 const path = require('path');
 const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
@@ -17,7 +17,7 @@ class SimpleGenerator {
         this.outputFolder = path.join(getMainFolder(), language, type, theme, subtheme);
         this.questionOutputFolder = path.join(getQuestionsFolder(language), type, theme);
 
-        this.repoOutputFolder = path.join(getRepoUrl(), language, type, theme, subtheme);
+        this.repoOutputFolder = HttpUrl.join(getRepoUrl(), language, type, theme, subtheme);
 
         this.assets = [];
         this.questions = [];
@@ -128,16 +128,16 @@ class SimpleGenerator {
         let data = {};
         let fileExtension = asset.file.split('.')[1];
         if(this.type == 'sound')
-            data.sound_url = path.join(this.repoOutputFolder,...otherPaths,  `${uuid}.${fileExtension}`);
+            data.sound_url = HttpUrl.join(this.repoOutputFolder,...otherPaths,  `${uuid}.${fileExtension}`);
         else if(this.type == 'picture')
-            data.picture_url = path.join(this.repoOutputFolder, ...otherPaths, `${uuid}.${fileExtension}`);
+            data.picture_url = HttpUrl.join(this.repoOutputFolder, ...otherPaths, `${uuid}.${fileExtension}`);
 
         let reveal_uuid = uuidv4();
         if(asset.reveal_picture) {
             if(!fs.existsSync(path.join(this.outputFolder, ...otherPaths, 'reveal_picture')))
                 fs.mkdirSync(path.join(this.outputFolder, ...otherPaths, 'reveal_picture'), { recursive: true });
             fs.copyFileSync(asset.reveal_picture, path.join(this.outputFolder, ...otherPaths, `reveal_picture/${reveal_uuid}.webp`));
-            data.reveal_picture_url = path.join(this.repoOutputFolder, ...otherPaths, `reveal_picture/${reveal_uuid}.webp`);
+            data.reveal_picture_url = HttpUrl.join(this.repoOutputFolder, ...otherPaths, `reveal_picture/${reveal_uuid}.webp`);
         }
         if(asset.reveal_sound) {
             if(!fs.existsSync(path.join(this.outputFolder, ...otherPaths, 'reveal_sound')))
@@ -145,7 +145,7 @@ class SimpleGenerator {
             
             let fileExtension = asset.reveal_sound.split('.')[1];
             fs.copyFileSync(asset.reveal_sound, path.join(this.outputFolder, ...otherPaths, `reveal_sound/${reveal_uuid}.${fileExtension}`));
-            data.reveal_sound_url = path.join(this.repoOutputFolder, ...otherPaths, `reveal_sound/${reveal_uuid}.${fileExtension}`);
+            data.reveal_sound_url = HttpUrl.join(this.repoOutputFolder, ...otherPaths, `reveal_sound/${reveal_uuid}.${fileExtension}`);
         }
 
         return data;

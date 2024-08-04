@@ -164,7 +164,7 @@ class GroupGenerator extends SimpleGenerator {
         let selectedAsset = [fileName];
         let proposals = [
             {
-                name: fileName,
+                name: asset.name,
                 is_answer: true
             }
         ];
@@ -173,13 +173,14 @@ class GroupGenerator extends SimpleGenerator {
         for (let i = 0; i < 5; i++) {
             proposalFilter = assets.filter(a => !selectedAsset.includes(a.name));
             let randomAsset = proposalFilter[Math.floor(Math.random() * proposalFilter.length)];
+            if(randomAsset === undefined) break;
             proposals.push(
                 {
                     name: randomAsset.name,
                     is_answer: false
                 }
             );
-            selectedAsset.push(randomAsset);
+            selectedAsset.push(randomAsset.name);
         }
         
         return {

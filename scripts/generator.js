@@ -168,7 +168,7 @@ class SimpleGenerator {
         let selectedAsset = [fileName];
         let proposals = [
             {
-                name: fileName,
+                name: asset.name,
                 is_answer: true
             }
         ]
@@ -183,7 +183,7 @@ class SimpleGenerator {
                     is_answer: false
                 }
             );
-            selectedAsset.push(randomAsset);
+            selectedAsset.push(randomAsset.name);
         }
 
         return {

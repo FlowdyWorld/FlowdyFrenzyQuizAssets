@@ -161,7 +161,7 @@ class GroupGenerator extends SimpleGenerator {
             fs.mkdirSync(path.join(this.outputFolder, ...codesPath), { recursive: true });
         fs.copyFileSync(path.join(this.inputFolder, asset.file), path.join(this.outputFolder, ...codesPath, `${uuid}.${fileExtension}`));
         
-        let selectedAsset = [fileName];
+        let selectedAsset = [asset.name];
         let proposals = [
             {
                 name: asset.name,

@@ -128,9 +128,9 @@ class SimpleGenerator {
         let data = {};
         let fileExtension = path.extname(asset.file);
         if(this.type == 'sound')
-            data.sound_url = HttpUrl.join(this.repoOutputFolder,...otherPaths,  `${uuid}.${fileExtension}`);
+            data.sound_url = HttpUrl.join(this.repoOutputFolder,...otherPaths,  `${uuid}${fileExtension}`);
         else if(this.type == 'picture')
-            data.picture_url = HttpUrl.join(this.repoOutputFolder, ...otherPaths, `${uuid}.${fileExtension}`);
+            data.picture_url = HttpUrl.join(this.repoOutputFolder, ...otherPaths, `${uuid}${fileExtension}`);
 
         let reveal_uuid = uuidv4();
         if(asset.reveal_picture) {
@@ -144,8 +144,8 @@ class SimpleGenerator {
                 fs.mkdirSync(path.join(this.outputFolder, ...otherPaths, 'reveal_sound'), { recursive: true });
             
             let fileExtension = path.extname(asset.reveal_sound);
-            fs.copyFileSync(asset.reveal_sound, path.join(this.outputFolder, ...otherPaths, `reveal_sound/${reveal_uuid}.${fileExtension}`));
-            data.reveal_sound_url = HttpUrl.join(this.repoOutputFolder, ...otherPaths, `reveal_sound/${reveal_uuid}.${fileExtension}`);
+            fs.copyFileSync(asset.reveal_sound, path.join(this.outputFolder, ...otherPaths, `reveal_sound/${reveal_uuid}${fileExtension}`));
+            data.reveal_sound_url = HttpUrl.join(this.repoOutputFolder, ...otherPaths, `reveal_sound/${reveal_uuid}${fileExtension}`);
         }
 
         return data;
@@ -160,10 +160,10 @@ class SimpleGenerator {
     generateQuestion(asset, uuid) {
 
         let fileName = asset.file.replace(path.extname(asset.file), '');
-        let fileExtension = path.extname(asset.file).replace('.', '');
+        let fileExtension = path.extname(asset.file);
         console.log(`Processing ${this.theme}/${this.subtheme}: ${fileName}`);
 
-        fs.copyFileSync(path.join(this.inputFolder, asset.file), path.join(this.outputFolder, `${uuid}.${fileExtension}`));
+        fs.copyFileSync(path.join(this.inputFolder, asset.file), path.join(this.outputFolder, `${uuid}${fileExtension}`));
 
         let selectedAsset = [fileName];
         let proposals = [

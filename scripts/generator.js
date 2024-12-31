@@ -31,7 +31,7 @@ class SimpleGenerator {
         for await(let file of fs.readdirSync(this.inputFolder)) {
             if(fs.lstatSync(path.join(this.inputFolder, file)).isDirectory() ) continue;
             let asset = {
-                name: file.split('.')[0],
+                name: path.basename(file, path.extname(file)),
                 file: file,
             }
             this.assets.push(asset);
@@ -69,7 +69,7 @@ class SimpleGenerator {
         if(fs.existsSync(path.join(this.inputFolder, 'reveal_picture'))) {
             fs.readdirSync(path.join(this.inputFolder, 'reveal_picture')).forEach(file => {
                 if (['.png', '.jpg', '.jpeg', '.webp'].includes(path.extname(file))) {
-                    let asset = this.assets.find(c => c.name === file.split('.')[0]);
+                    let asset = this.assets.find(c => c.name === path.basename(file, path.extname(file)));
                     if(asset) {
                         asset.reveal_picture = path.join(this.inputFolder, 'reveal_picture', file);
                     }
@@ -83,7 +83,7 @@ class SimpleGenerator {
         if(fs.existsSync(path.join(this.inputFolder, 'reveal_sound'))) {
             fs.readdirSync(path.join(this.inputFolder, 'reveal_sound')).forEach(file => {
                 if (['.mp3', '.wav', '.ogg'].includes(path.extname(file))) {
-                    let asset = this.assets.find(c => c.name === file.split('.')[0]);
+                    let asset = this.assets.find(c => c.name === path.basename(file, path.extname(file)));
                     if(asset) {
                         asset.reveal_sound = path.join(this.inputFolder, 'reveal_sound', file);
                     }
@@ -126,7 +126,7 @@ class SimpleGenerator {
      */
     generateQuestionData(uuid, asset, otherPaths = []) {
         let data = {};
-        let fileExtension = asset.file.split('.')[1];
+        let fileExtension = path.extname(asset.file);
         if(this.type == 'sound')
             data.sound_url = HttpUrl.join(this.repoOutputFolder,...otherPaths,  `${uuid}.${fileExtension}`);
         else if(this.type == 'picture')
@@ -143,7 +143,7 @@ class SimpleGenerator {
             if(!fs.existsSync(path.join(this.outputFolder, ...otherPaths, 'reveal_sound')))
                 fs.mkdirSync(path.join(this.outputFolder, ...otherPaths, 'reveal_sound'), { recursive: true });
             
-            let fileExtension = asset.reveal_sound.split('.')[1];
+            let fileExtension = path.extname(asset.reveal_sound);
             fs.copyFileSync(asset.reveal_sound, path.join(this.outputFolder, ...otherPaths, `reveal_sound/${reveal_uuid}.${fileExtension}`));
             data.reveal_sound_url = HttpUrl.join(this.repoOutputFolder, ...otherPaths, `reveal_sound/${reveal_uuid}.${fileExtension}`);
         }

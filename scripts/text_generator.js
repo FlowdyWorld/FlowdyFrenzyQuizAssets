@@ -3,15 +3,16 @@ const path = require('path');
 const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
 
-class SimpleGenerator {
+class SimpleTextGenerator {
 
-    constructor(language, name, type, question, theme, subtheme) {
+    constructor(language, name, type, question, theme, subtheme, data, questionInfo) {
         this.language = language;
         this.type = type;
         this.theme = theme;
         this.subtheme = subtheme;
         this.name = name;
         this.question_sentence = question;
+        this.questionInfo = questionInfo;
 
         this.inputFolder = path.join(getScriptsFolder(language), type, theme, subtheme);
         this.outputFolder = path.join(getMainFolder(), language, type, theme, subtheme);
@@ -19,7 +20,7 @@ class SimpleGenerator {
 
         this.repoOutputFolder = HttpUrl.join(getRepoUrl(), language, type, theme, subtheme);
 
-        this.assets = [];
+        this.assets = data;
         this.questions = [];
     }
 
@@ -28,26 +29,6 @@ class SimpleGenerator {
      * Prepare assets
      */
     async prepareAssets() {
-        for await(let file of fs.readdirSync(this.inputFolder)) {
-            if(fs.lstatSync(path.join(this.inputFolder, file)).isDirectory() ) continue;
-            let asset = {
-                name: path.basename(file, path.extname(file)),
-                file: file,
-            }
-            this.assets.push(asset);
-
-
-            let filePath = path.join(this.inputFolder, file);
-            switch(this.type) {
-                case 'picture':
-                    if(path.extname(file) === ".webp") continue;
-                    await convertToWebp(filePath);
-                    break;
-                default:
-                    break;
-            }
-        }
-            
         this.checkAssetsData();
     }
 
@@ -56,14 +37,10 @@ class SimpleGenerator {
      * Generate main method
      */
     async generate() {
-        console.log("Preparing Assets...");
         await this.prepareAssets();
-        console.log("Generating folders...");
         this.generateFolders();
-        console.log("Generating questions...");
         this.generateQuestions();
-        console.log("Writing questions...");
-        this.writeQuestions();
+        this.writeQuestions(true);
     }
 
     /**
@@ -73,7 +50,7 @@ class SimpleGenerator {
         if(fs.existsSync(path.join(this.inputFolder, 'reveal_picture'))) {
             fs.readdirSync(path.join(this.inputFolder, 'reveal_picture')).forEach(file => {
                 if (['.png', '.jpg', '.jpeg', '.webp'].includes(path.extname(file))) {
-                    let asset = this.assets.find(c => c.name === path.basename(file, path.extname(file)));
+                    let asset = this.assets.find(c => c[questionInfo.id] === path.basename(file, path.extname(file)));
                     if(asset) {
                         asset.reveal_picture = path.join(this.inputFolder, 'reveal_picture', file);
                     }
@@ -87,7 +64,7 @@ class SimpleGenerator {
         if(fs.existsSync(path.join(this.inputFolder, 'reveal_sound'))) {
             fs.readdirSync(path.join(this.inputFolder, 'reveal_sound')).forEach(file => {
                 if (['.mp3', '.wav', '.ogg'].includes(path.extname(file))) {
-                    let asset = this.assets.find(c => c.name === path.basename(file, path.extname(file)));
+                    let asset = this.assets.find(c => c[questionInfo.id] === path.basename(file, path.extname(file)));
                     if(asset) {
                         asset.reveal_sound = path.join(this.inputFolder, 'reveal_sound', file);
                     }
@@ -114,8 +91,6 @@ class SimpleGenerator {
      */
     generateQuestions() {
         this.assets.forEach(asset => {
-            if (this.type === 'sound' && !['.mp3', '.wav', '.ogg'].includes(path.extname(asset.file))) return;
-            if (this.type === 'picture' && path.extname(asset.file) !== '.webp') return;
             
             let uuid = uuidv4();
             let question = this.generateQuestion(asset, uuid);
@@ -128,14 +103,8 @@ class SimpleGenerator {
      * @param {*} asset 
      * @returns data object
      */
-    generateQuestionData(uuid, asset, otherPaths = []) {
+    generateQuestionData(asset, otherPaths = []) {
         let data = {};
-        let fileExtension = path.extname(asset.file);
-        if(this.type == 'sound')
-            data.sound_url = HttpUrl.join(this.repoOutputFolder,...otherPaths,  `${uuid}${fileExtension}`);
-        else if(this.type == 'picture')
-            data.picture_url = HttpUrl.join(this.repoOutputFolder, ...otherPaths, `${uuid}${fileExtension}`);
-
         let reveal_uuid = uuidv4();
         if(asset.reveal_picture) {
             if(!fs.existsSync(path.join(this.outputFolder, ...otherPaths, 'reveal_picture')))
@@ -163,42 +132,45 @@ class SimpleGenerator {
      */
     generateQuestion(asset, uuid) {
 
-        let fileName = asset.file.replace(path.extname(asset.file), '');
-        let fileExtension = path.extname(asset.file);
-        console.log(`Processing ${this.theme}/${this.subtheme}: ${fileName}`);
+        let name = asset[this.questionInfo.id];
+        console.log(`Processing ${this.theme}/${this.subtheme}: ${name}`);
 
-        fs.copyFileSync(path.join(this.inputFolder, asset.file), path.join(this.outputFolder, `${uuid}${fileExtension}`));
-
-        let selectedAsset = [fileName];
+        let selectedAsset = [name];
         let proposals = [
             {
-                name: asset.name,
+                name: name,
                 is_answer: true
             }
         ]
 
-        let proposalFilter = this.assets.filter(a => a.name !== fileName);
+        let proposalFilter = this.assets.filter(a => a[this.questionInfo.id] !== name);
         for (let i = 0; i < 5; i++) {
-            proposalFilter = this.assets.filter(a => !selectedAsset.includes(a.name));
+            proposalFilter = this.assets.filter(a => !selectedAsset.includes(a[this.questionInfo.id]));
             let randomAsset = proposalFilter[Math.floor(Math.random() * proposalFilter.length)];
             proposals.push(
                 {
-                    name: randomAsset.name,
+                    name: randomAsset[this.questionInfo.id],
                     is_answer: false
                 }
             );
-            selectedAsset.push(randomAsset.name);
+            selectedAsset.push(randomAsset[this.questionInfo.id]);
         }
+
+        let question_sentence = this.formatSentence(asset);
 
         return {
             id: uuid,
             type: this.type,
-            sentence: this.question_sentence,
+            sentence: question_sentence,
             data: this.generateQuestionData(uuid, asset),
             proposal: [
                 ...proposals
             ],
         };
+    }
+
+    formatSentence(asset) {
+        return this.questionInfo.template.replace(/{{(\w+)}}/g, (_, key) => asset[key]);
     }
 
     /**
@@ -210,7 +182,7 @@ class SimpleGenerator {
             fs.mkdirSync(path.join(this.questionOutputFolder, this.subtheme), { recursive: true });
         }
         fs.writeFileSync(
-            path.join(this.questionOutputFolder, withSubtheme ? this.subtheme : '', `${this.name}.json`), 
+            path.join(this.questionOutputFolder, withSubtheme ? this.subtheme : '', `questions.json`), 
             JSON.stringify({
                 default_sentence: this.question_sentence,
                 questions: this.questions
@@ -220,4 +192,4 @@ class SimpleGenerator {
 
 }
 
-module.exports = SimpleGenerator;
+module.exports = SimpleTextGenerator;

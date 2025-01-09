@@ -11,6 +11,7 @@
   "dependencies": {
     "@jimp/plugin-color": "^0.22.12",
     "axios": "^1.6.8",
+    "cheerio": "^1.0.0",
     "jimp": "^0.22.12",
     "uuid": "^9.0.1",
     "webp-converter": "^2.3.3"

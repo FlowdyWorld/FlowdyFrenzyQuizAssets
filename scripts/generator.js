@@ -56,9 +56,13 @@ class SimpleGenerator {
      * Generate main method
      */
     async generate() {
+        console.log("Preparing Assets...");
         await this.prepareAssets();
+        console.log("Generating folders...");
         this.generateFolders();
+        console.log("Generating questions...");
         this.generateQuestions();
+        console.log("Writing questions...");
         this.writeQuestions();
     }
 
